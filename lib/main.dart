@@ -1,3 +1,6 @@
+
+
+
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -5,6 +8,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'infopage.dart';
 
 
 void main() {
@@ -17,6 +21,7 @@ void main() {
     height: size.height,
   );
 
+
   final mapController = controller.mapController;
 //  Set firebase https://www.youtube.com/watch?v=DqJ_KjFzL9I
   Firestore.instance
@@ -25,13 +30,18 @@ void main() {
       .listen((data) =>
       data.documents.forEach((doc) =>
 //Read all the markers from firebase and add them to map
-      AddMarkers(mapController,ConvertCoordinates(doc["lat"], doc["lng"])
+      AddMarkers(mapController,ConvertCoordinates(doc["lat"], doc["lng"]),doc["title"],doc["story"]
       )));
 
-  mapController.addMarker(MarkerOptions(position: LatLng(0 ,0)));
-  mapController.onMarkerTapped.add((Marker marker){
-                print("Touch marker");
-  });
+//mapController.onInfoWindowTapped.add((Marker marker) {});
+//  mapController.onMarkerTapped.add((Marker marker){
+//
+//   print(marker.options.position.longitude);
+//    print("Touch marker");
+//
+//
+//
+//  });
   final Widget mapWidget = GoogleMapOverlay(controller: controller);
   runApp(
     MaterialApp(
@@ -61,7 +71,9 @@ void main() {
         ),
         body: MapsDemo(mapWidget, controller.mapController),
         floatingActionButton: FloatingActionButton(
-          onPressed: () {},
+          onPressed: () {
+
+          },
           child: const Icon(Icons.my_location),
         ),
       ),
@@ -82,6 +94,15 @@ class MapsDemo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    controller.onMarkerTapped.add((Marker marker){
+//Marker listener open new page info page
+//    print(marker.options.position.longitude);
+//    print("Touch marker");
+      Navigator.push(
+          context, new MaterialPageRoute(builder: (context) => new AboutPage()));
+
+
+    });
     return Center(child: mapWidget);
   }
 }
@@ -94,7 +115,28 @@ LatLng ConvertCoordinates(String lat, String lng){
 
 
 
-void AddMarkers(GoogleMapController map, LatLng coor){
+void AddMarkers(GoogleMapController map, LatLng coor, String title, String story){
 
-  map.addMarker(MarkerOptions(position: coor));
+  map.addMarker(MarkerOptions(position: coor, infoWindowText:InfoWindowText(title, story)));
+}
+
+
+
+class SecondScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Second Screen"),
+      ),
+      body: Center(
+        child: RaisedButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          child: Text('Go back!'),
+        ),
+      ),
+    );
+  }
 }
