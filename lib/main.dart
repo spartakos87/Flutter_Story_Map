@@ -199,7 +199,7 @@ class SecondScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Second Screen"),
+        title: Text("Input Screen"),
       ),
       body: Center(
           child: new Column(
