@@ -9,27 +9,30 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:uuid/uuid.dart';
 
 import 'infopage.dart';
 
 void main() {
+
   GoogleMapController.init();
   final size = MediaQueryData.fromWindow(ui.window).size;
   final GoogleMapOverlayController controller =
-      GoogleMapOverlayController.fromSize(
+  GoogleMapOverlayController.fromSize(
     width: size.width,
     height: size.height,
   );
 
   final mapController = controller.mapController;
-//  Set firebase https://www.youtube.com/watch?v=DqJ_KjFzL9I
-//  TODO check if every time I come back the above commands call
-  Firestore.instance.collection('Stories').snapshots().listen((data) =>
-      data.documents.forEach((doc) =>
-//Read all the markers from firebase and add them to map
-
-          AddMarkers(mapController, ConvertCoordinates(doc["lat"], doc["lng"]),
-              doc["title"], doc["story"], doc["url"])));
+////  Set firebase https://www.youtube.com/watch?v=DqJ_KjFzL9I
+////  TODO check if every time I come back the above commands call
+//  Firestore.instance.collection('Stories').snapshots().listen((data) =>
+//      data.documents.forEach((doc) =>
+////Read all the markers from firebase and add them to map
+//
+//          AddMarkers(mapController, ConvertCoordinates(doc["lat"], doc["lng"]),
+//              doc["title"], doc["story"], doc["url"])));
 
 
 
@@ -83,31 +86,45 @@ class MapsDemo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+//  Set firebase https://www.youtube.com/watch?v=DqJ_KjFzL9I
+//  TODO check if every time I come back the above commands call
+    Firestore.instance.collection('Stories').snapshots().listen((data) =>
+        data.documents.forEach((doc) =>
+//Read all the markers from firebase and add them to map
+
+        AddMarkers(controller, ConvertCoordinates(doc["lat"], doc["lng"]),
+            doc["title"], doc["story"], doc["url"])));
 
     controller.onMarkerTapped.add((Marker marker) async {
 //Marker listener open new page info page
 
       String titlos = marker.options.infoWindowText.title;
-      String story = marker.options.infoWindowText.snippet.split("?")[0];
-      String url = marker.options.infoWindowText.snippet.split("?")[1];
 
 
-      String realUrl = await makeRequest(url);
-      String downloadUrl =getDownloadUrl(realUrl,url);
+
+
 
       if (titlos != "Here you are!") {
+        String story = marker.options.infoWindowText.snippet.split("?")[0];
+        String url = marker.options.infoWindowText.snippet.split("?")[1];
+        String realUrl = await makeRequest(url);
+        String downloadUrl =getDownloadUrl(realUrl,url);
+
         Navigator.push(
 //        Parse title to next page/screen
 
             context,
             new MaterialPageRoute(
                 builder: (context) =>
-                    new AboutPage(title: titlos, story: story, url: downloadUrl,)));
+                new AboutPage(title: titlos, story: story, url: downloadUrl,)));
       } else {
+
         Navigator.push(
 //        Parse title to next page/screen
             context,
-            new MaterialPageRoute(builder: (context) => new SecondScreen()));
+            new MaterialPageRoute(builder: (context) => new SecondScreen(
+                marker.options.position.latitude.toString(),
+                marker.options.position.longitude.toString())));
       }
     });
     return Center(child: mapWidget);
@@ -126,6 +143,7 @@ void AddMarkers(GoogleMapController map, LatLng coor, String title,
 }
 
 
+
 Future<String> makeRequest(String n) async {
   String baseUrl = 'https://firebasestorage.googleapis.com/v0/b/storymap-da000.appspot.com/o/';
   String url = '$baseUrl' + '$n';
@@ -133,7 +151,7 @@ Future<String> makeRequest(String n) async {
   final response = await client.get(url);
 
 
-return response.body;
+  return response.body;
 }
 
 
@@ -145,6 +163,38 @@ String getDownloadUrl(String url, String name){
 }
 
 class SecondScreen extends StatelessWidget {
+  final String lat;
+  final String lng;
+//  final String image_name;
+  final titleC = TextEditingController();
+  final storyC = TextEditingController();
+  static final String image_name = Uuid().v1();
+
+
+
+
+  SecondScreen(this.lat, this.lng,);
+  Future getImage() async {
+    var image = await ImagePicker.pickImage(source: ImageSource.camera);
+    final StorageReference firebaseStorageRef =
+    FirebaseStorage.instance.ref().child(image_name);
+    final StorageUploadTask task =
+    firebaseStorageRef.putFile(image);
+  }
+
+  uploadFirebase(){
+
+    var map= {
+      "title":titleC.text,
+      "story":storyC.text,
+      "url":image_name,
+      "lat":lat,
+      "lng":lng
+    };
+
+    Firestore.instance.collection('Stories').document()
+        .setData(map);
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -152,12 +202,27 @@ class SecondScreen extends StatelessWidget {
         title: Text("Second Screen"),
       ),
       body: Center(
-        child: RaisedButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          child: Text('Go back!'),
-        ),
+          child: new Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                new TextField (
+                  controller: titleC,
+                ),
+                new TextField(
+                  controller: storyC,
+                ),
+                new RaisedButton(
+                  onPressed: () => getImage(),
+                  child: new Text('Take photo'),
+
+                ),
+                new RaisedButton(
+                  onPressed: () => uploadFirebase(),
+                  child: new Text('Confirm'),
+
+                )
+
+              ])
       ),
     );
   }
