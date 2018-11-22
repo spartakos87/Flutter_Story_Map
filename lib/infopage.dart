@@ -102,20 +102,3 @@ void Delete(String titlos){
 
 
 }
-//_AboutPageState(this.title, this.story);
-//@override
-//Widget build(BuildContext context) {
-//  return new Scaffold(
-//    appBar: new AppBar(
-////        title: new Text('About'),
-//      title: new Text(title),
-//    ),
-//    body: new Center(
-//      child: new RaisedButton(
-//        child: new Text('Back to Home Page'),
-//        onPressed: () => _navHome(context),
-//      ),
-//    ),
-//  );
-//}
-//}
